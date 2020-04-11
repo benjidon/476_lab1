@@ -1,5 +1,4 @@
-
-GEOCEAN
+Lab1
 =====
 
 Building and running instructions can be found online [here][opengl-build-instructions]
@@ -10,13 +9,5 @@ and a local offline version is included in this repo here: [build-instructions.m
 
 To build: Simply create the build directiory and run "cmake ..", and then "make". 
 
-The executable file is called "geocean" and can be run by typing "./geocean"
+The executable file is called "lab1" and can be run by typing "./lab1"
 
-
-Welcome to the Fishy Landscape (Underwater Adventure)
-
-Explore the scene by using WASD!
-
-<3 <3 <3
-
-Authored By Benjamin Don
