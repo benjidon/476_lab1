@@ -14,6 +14,7 @@
 #include "WindowManager.h"
 #include "stb_image.h"
 #include "GameManager.h"
+#include "Player.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader/tiny_obj_loader.h>
@@ -33,6 +34,9 @@ public:
 
 	// Initialize GameManager Object
 	GameManager *gameManager = new GameManager(10, 600);
+
+	// Initialize Player Object 
+	Player *player = new Player();
 
 	// Our shader program
 	std::shared_ptr<Program> prog;
@@ -113,8 +117,8 @@ public:
 	float phi = 0;
 	float theta = -1.5708;
 
-	float scrollY = 0;
-	float scrollX = 0;
+	//float scrollY = 0;
+	//float scrollX = 0;
 
 	glm::vec3 wshift = vec3(0, 0, 0);
 	glm::vec3 sshift = vec3(0, 0, 0);
@@ -192,20 +196,20 @@ public:
 		if (key == GLFW_KEY_A && action == GLFW_PRESS)
 		{
 
-			strafeLeft = true;
+			player->strafeLeft = true;
 		}
 		if (key == GLFW_KEY_D && action == GLFW_PRESS)
 		{
 
-			strafeRight = true;
+			player->strafeRight = true;
 		}
 		if (key == GLFW_KEY_A && action == GLFW_RELEASE)
 		{
-			strafeLeft = false;
+			player->strafeLeft = false;
 		}
 		if (key == GLFW_KEY_D && action == GLFW_RELEASE)
 		{
-			strafeRight = false;
+			player->strafeRight = false;
 		}
 
 		// Dolly Controls
@@ -213,23 +217,23 @@ public:
 		{
 			if (!dollyBackward)
 			{
-				dollyForward = true;
+				player->dollyForward = true;
 			}
 		}
 		if (key == GLFW_KEY_S && action == GLFW_PRESS)
 		{
 			if (!dollyForward)
 			{
-				dollyBackward = true;
+				player->dollyBackward = true;
 			}
 		}
 		if (key == GLFW_KEY_W && action == GLFW_RELEASE)
 		{
-			dollyForward = false;
+			player->dollyForward = false;
 		}
 		if (key == GLFW_KEY_S && action == GLFW_RELEASE)
 		{
-			dollyBackward = false;
+			player->dollyBackward = false;
 		}
 
 		if (key == GLFW_KEY_Q && action == GLFW_PRESS)
@@ -243,17 +247,6 @@ public:
 		if (key == GLFW_KEY_R && action == GLFW_PRESS)
 		{
 			phi += 1;
-		}
-		if (key == GLFW_KEY_M && action == GLFW_PRESS)
-		{
-			unsigned int temp = mat1;
-			mat1 = mat2;
-			mat2 = mat3;
-			mat3 = mat4;
-			mat4 = mat5;
-			mat5 = mat6;
-			mat6 = mat7;
-			mat7 = temp;
 		}
 
 		if (key == GLFW_KEY_Z && action == GLFW_PRESS)
@@ -291,6 +284,7 @@ public:
 			if (!((phi + scrollY) >= .82))
 			{
 				phi += scrollY;
+				player->phi += scrollY;
 			}
 		}
 
@@ -299,10 +293,13 @@ public:
 			if (!((phi + scrollY) <= -1.4))
 			{
 				phi += scrollY;
+				player->phi += scrollY;
+
 			}
 		}
 
 		theta += scrollX;
+		player->theta += scrollX;
 	}
 
 	void resizeCallback(GLFWwindow *window, int width, int height)
@@ -558,46 +555,10 @@ public:
 		Projection->pushMatrix();
 		Projection->perspective(45.0f, aspect, 0.01f, 10000.0f);
 
-		// Calculate direction angles
-		float x = cos(phi) * cos(theta);
-		float y = sin(phi);
-		float z = cos(phi) * cos(1.57079632679 - theta);
-
-		// Set up lookAt vectors
-		vec3 direction = vec3(x, y, z);
-		vec3 view = direction - cameraPos;
-		view = glm::normalize(view);
-		vec3 strafe = glm::cross(up, view);
-
-		vec3 strafeOff = (strafe * strafeSpeed);
-		vec3 dollyOff = (view * dollySpeed);
-
-		if (strafeLeft)
-		{
-			strafeSpeed = 1;
-			ashift += strafeOff;
-		}
-		else if (strafeRight)
-		{
-			strafeSpeed = -1;
-			dshift += strafeOff;
-		}
-
-		if (dollyForward)
-		{
-			dollySpeed = 1;
-			wshift += dollyOff;
-		}
-		else if (dollyBackward)
-		{
-			dollySpeed = -1;
-			sshift += dollyOff;
-		}
-
-		vec3 posShift = (dshift + sshift + wshift + ashift);
+		player->getUpdate();
 
 		//glm::mat4 lookAt = glm::lookAt(cameraPos, direction, up);
-		View->lookAt(cameraPos + posShift + vec3(0, 25, 0), direction + posShift + vec3(0, 25, 0), up);
+		View->lookAt(player->posShift, player->direction + player->posShift, up);
 
 		// View is global translation along negative z for now
 		View->pushMatrix();
