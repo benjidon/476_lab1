@@ -22,6 +22,8 @@ public:
 	float strafeSpeed;
 	float height;
 
+	float viewBob;
+
 	glm::vec3 wshift;
 	glm::vec3 sshift;
 	glm::vec3 ashift;

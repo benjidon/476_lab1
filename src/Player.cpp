@@ -24,6 +24,7 @@ Player::Player()
 	posShift = vec3(0, 0, 0);
 	direction = vec3(0, 1, 0);
 	height = 40;
+	viewBob = 0;
 }
 
 void Player::getUpdate()
@@ -48,22 +49,26 @@ void Player::getUpdate()
 	{
 		strafeSpeed = 1;
 		ashift += strafeOff;
+		viewBob += .1;
 	}
 	else if (strafeRight)
 	{
 		strafeSpeed = -1;
 		dshift += strafeOff;
+		viewBob += .1;
 	}
 
 	if (dollyForward)
 	{
 		dollySpeed = 1;
 		wshift += dollyOff;
+		viewBob += .1;
 	}
 	else if (dollyBackward)
 	{
 		dollySpeed = -1;
 		sshift += dollyOff;
+		viewBob += .1;
 	}
 	posShift = (dshift + sshift + wshift + ashift);
 	posShift.y += this->height;

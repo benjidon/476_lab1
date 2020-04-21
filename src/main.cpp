@@ -557,8 +557,10 @@ public:
 
 		player->getUpdate();
 
+		vec3 bob = vec3(0,  sin(player->viewBob * 1.3), 0);
+
 		//glm::mat4 lookAt = glm::lookAt(cameraPos, direction, up);
-		View->lookAt(player->posShift, player->direction + player->posShift, up);
+		View->lookAt(player->posShift + bob, player->direction + player->posShift + bob, up);
 
 		// View is global translation along negative z for now
 		View->pushMatrix();
