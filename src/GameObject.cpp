@@ -1,4 +1,4 @@
-#include "GameObject.h"
+#include "GameObject.h" 
 
 GameObject::GameObject()
 {
@@ -10,7 +10,7 @@ glm::vec3 GameObject::getPosition() {
 }
 
 glm::vec3 GameObject::getVelocity() {
-	return this->position;
+	return this->velocity;
 }
 
 void GameObject::setPosition(glm::vec3 newPos) {

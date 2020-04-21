@@ -12,6 +12,7 @@
 #include "MatrixStack.h"
 #include "WindowManager.h"
 #include "stb_image.h"
+#include "GameManager.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader/tiny_obj_loader.h>
@@ -29,6 +30,9 @@ class Application : public EventCallbacks
 public:
 	WindowManager *windowManager = nullptr;
 
+	// Initialize GameManager Object
+	GameManager *gameManager = new GameManager(10, 5000);
+
 	// Our shader program
 	std::shared_ptr<Program> prog;
 
@@ -43,8 +47,6 @@ public:
 
 	vector<shared_ptr<Shape>> corals;
 
-	int flockSize = 250;
-	int count = 0;
 	int sign = 1;
 
 	// Cubemap Faces
@@ -306,6 +308,9 @@ public:
 		// Enable z-buffer test.
 		glEnable(GL_DEPTH_TEST);
 
+		// Initialize player and game objects
+		gameManager->init();
+
 		// Initialize the GLSL program.
 		prog = make_shared<Program>();
 		prog->setVerbose(true);
@@ -540,7 +545,7 @@ public:
 		vec3 posShift = (dshift + sshift + wshift + ashift);
 
 		//glm::mat4 lookAt = glm::lookAt(cameraPos, direction, up);
-		View->lookAt(cameraPos + posShift, direction + posShift, up);
+		View->lookAt(cameraPos + posShift + vec3(0, 25, 0), direction + posShift + vec3(0, 25, 0), up);
 
 		// View is global translation along negative z for now
 		View->pushMatrix();
@@ -564,16 +569,60 @@ public:
 		Model->pushMatrix();
 		Model->loadIdentity();
 
-		int ground_width = 400;
+
+		vector<GameObject> gameObjects = gameManager->getGameObjects();
+		int boardSize = gameManager->getBoardsize();
+
+		setMaterial(4);
+		for (int i = 0; i < gameObjects.size(); i++) {
+			GameObject gameObject = gameObjects[i];
+
+			Model->pushMatrix();
+				Model->translate(gameObject.getPosition());
+				Model->scale(vec3(8, 8, 8));
+				setModel(prog, Model);
+				cubeMesh->draw(prog);
+			Model->popMatrix();
+		}
 
 		// Draw Ground
 		setMaterial(7);
 		Model->pushMatrix();
-			Model->translate(vec3(0, -20, 0));
-			Model->scale(vec3(ground_width, 2, ground_width));
+			Model->translate(vec3(0, 0, 0));
+			Model->scale(vec3(boardSize, 2, boardSize));
 
-			// Model->pushMatrix();
-			// 	Model->translate(vec3(ground_width) )
+			setModel(prog, Model);
+			cubeMesh->draw(prog);
+		Model->popMatrix();
+
+		Model->pushMatrix();
+			Model->translate(vec3(0, 5, -boardSize / 2));
+			Model->scale(vec3(boardSize + 2.5, 20, 2));
+
+			setModel(prog, Model);
+			cubeMesh->draw(prog);
+		Model->popMatrix();
+
+		Model->pushMatrix();
+			Model->translate(vec3(0, 5, boardSize / 2));
+			Model->scale(vec3(boardSize + 2.5, 20, 2));
+
+			setModel(prog, Model);
+			cubeMesh->draw(prog);
+		Model->popMatrix();
+
+		Model->pushMatrix();
+			Model->translate(vec3(-boardSize / 2, 5, 0));
+			Model->scale(vec3(2, 20, boardSize + 2.5));
+
+			setModel(prog, Model);
+			cubeMesh->draw(prog);
+		Model->popMatrix();
+
+		Model->pushMatrix();
+			Model->translate(vec3(boardSize / 2, 5, 0));
+			Model->scale(vec3(2, 20, boardSize + 2.5));
+
 			setModel(prog, Model);
 			cubeMesh->draw(prog);
 		Model->popMatrix();
@@ -583,7 +632,7 @@ public:
 		// Draw skybox
 		Model->pushMatrix();
 			Model->translate(vec3(0, 50, 0));
-			Model->scale(vec3(1030, 1030, 1030));
+			Model->scale(vec3(3030, 3030, 3030));
 			cubeProg->bind();
 			glUniformMatrix4fv(cubeProg->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
 			glDepthFunc(GL_LEQUAL);
@@ -608,6 +657,8 @@ public:
 		// Pop matrix stacks.
 		Projection->popMatrix();
 		View->popMatrix();
+
+		gameManager->update();
 	}
 };
 
@@ -627,7 +678,7 @@ int main(int argc, char *argv[])
 	// and GL context, etc.
 
 	WindowManager *windowManager = new WindowManager();
-	windowManager->init(640, 480);
+	windowManager->init(800, 600);
 	windowManager->setEventCallbacks(application);
 	application->windowManager = windowManager;
 
