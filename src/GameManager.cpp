@@ -8,14 +8,15 @@ using namespace glm;
 GameManager::GameManager(int objectCount, int boardLength) 
 {
 	numObjects = objectCount;
-	boardSize = 800;
+	boardSize = boardLength;
 }
 
 
 GameManager::GameManager()
 {
 	numObjects = 20;
-	boardSize = 900;
+	boardSize = 50;
+	objectRadius = 10;
 }
 
 
@@ -25,19 +26,19 @@ void GameManager::init()
 }
 
 
-void GameManager::update()  
+void GameManager::update(double dt)  
 {
-	this->updateGameObjects();
+	this->updateGameObjects(dt);
 }
 
-vec3 GameManager::boundaryCollision(vec3 currPos, vec3 currVelocity) 
+vec3 GameManager::boundaryCollision(vec3 currPos, vec3 currVelocity, double radius) 
 {
-	if (abs(currPos.x) >= boardSize / 2)
+	if (abs(currPos.x) + radius >= boardSize / 2)
 	{
 		currVelocity.x *= -1;
 	}
 
-	if (abs(currPos.z) >= boardSize / 2) 
+	if (abs(currPos.z) + radius >= boardSize / 2) 
 	{
 		currVelocity.z *= -1;
 	}
@@ -45,7 +46,31 @@ vec3 GameManager::boundaryCollision(vec3 currPos, vec3 currVelocity)
 	return currVelocity;
 }
 
-void GameManager::updateGameObjects()
+vec3 GameManager::objectCollisions(GameObject currObj, vec3 currVelocity) 
+{
+	vec3 currPos = currObj.getPosition();
+	for (int i = 0; i < this->gameObjects.size(); i++) {
+		GameObject other = this->gameObjects[i];
+		vec3 otherPos = other.getPosition();
+
+		if (currPos != otherPos  && 
+			glm::distance(currPos, otherPos) < currObj.getRadius() * 2) 
+		{
+			vec3 otherVelocity = other.getVelocity();
+			double dotProd = glm::dot(currVelocity, otherVelocity);
+			double dotTheta = dotProd / (glm::length(currVelocity) * glm::length(otherVelocity));
+			double angleDiff = acos(dotTheta);
+			if (abs(angleDiff) < .2) {
+				currVelocity.x *= -1;
+			}
+			currVelocity.x *= -1;
+			currVelocity.z *= -1;
+		}
+	}
+	return currVelocity;
+}
+
+void GameManager::updateGameObjects(double dt)
 {
 	vector<GameObject> updatedObjects;
 	//cout << "updating" << endl;
@@ -53,8 +78,16 @@ void GameManager::updateGameObjects()
 		GameObject gameObj = this->gameObjects[i];
 		vec3 currPos = gameObj.getPosition();
 		vec3 currVelocity = gameObj.getVelocity();
+		double radius = gameObj.getRadius();
+
+
+		// currVelocity.x /= dt;
+		// currVelocity.z /= dt;
 	
-		currVelocity = this->boundaryCollision(currPos, currVelocity);
+		currVelocity = this->boundaryCollision(currPos, currVelocity, radius);
+		currVelocity = this->objectCollisions(gameObj, currVelocity);
+		//cout << currVelocity.x << " " << currVelocity.z << endl;
+
 
 		gameObj.setVelocity(currVelocity);
 		gameObj.setPosition(currPos + currVelocity);
@@ -69,12 +102,21 @@ void GameManager::initGameObjects()
 	std::vector<GameObject> objs;
 	for (int i = 0; i < this->numObjects; i++) {
 		int sign = 1;
+		int radius = 8;
 		if (rand() % 10 < 5) {
 			sign = -1;
 		}
 		GameObject *gameObj = new GameObject();
-		vec3 position = vec3(sign * rand() % boardSize / 2, 4, sign * rand() % boardSize / 2);
-		vec3 velocity = vec3(.5 + sign * rand() % 5, 0, .5 + sign * rand() % 2 % 100 / 100);
+		gameObj->setRadius(radius);
+		vec3 position = vec3(sign * rand() % boardSize / 2.5, 13, sign * rand() % boardSize / 2.5);
+
+
+		double vx = sign * (float)(rand() % 100) / 100; 
+		double vz = sign * (float)(rand() % 100) / 100; 
+
+		vec3 velocity = vec3(vx, 0, vz);
+		//cout << velocity.x << " " << velocity.z << endl;
+
 		gameObj->setPosition(position);
 		gameObj->setVelocity(velocity);
 		gameObjects.push_back(*gameObj);

@@ -84,7 +84,7 @@ Shape::Shape() :
 {
 	min = glm::vec3(0);
 	max = glm::vec3(0);
-	texOff = true;
+	texOff = false;
 
 	loadPermutation();
 }
@@ -285,7 +285,7 @@ void Shape::init()
 
 	
 	// Send the texture array to the GPU
-	if(texBuf.empty() || texOff) {
+	if(texBuf.empty()) {
 		texBufID = 0;
 	} else {
 		glGenBuffers(1, &texBufID);
@@ -310,7 +310,10 @@ void Shape::draw(const shared_ptr<Program> prog) const
 	int h_pos, h_nor, h_tex;
 	h_pos = h_nor = h_tex = -1;
 
-   glBindVertexArray(vaoID);
+   	//glBindVertexArray(vaoID);
+	CHECKED_GL_CALL(glBindVertexArray(vaoID));
+
+
 	// Bind position buffer
 	h_pos = prog->getAttribute("vertPos");
 	GLSL::enableVertexAttribArray(h_pos);

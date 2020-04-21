@@ -9,6 +9,7 @@
 #include "GLSL.h"
 #include "Program.h"
 #include "Shape.h"
+#include "Texture.h"
 #include "MatrixStack.h"
 #include "WindowManager.h"
 #include "stb_image.h"
@@ -31,11 +32,14 @@ public:
 	WindowManager *windowManager = nullptr;
 
 	// Initialize GameManager Object
-	GameManager *gameManager = new GameManager(10, 5000);
+	GameManager *gameManager = new GameManager(10, 600);
 
 	// Our shader program
 	std::shared_ptr<Program> prog;
 
+	// Texture program
+	std::shared_ptr<Program> texProg;
+	
 	// Cube Prog
 	std::shared_ptr<Program> cubeProg;
 
@@ -43,9 +47,16 @@ public:
 	vector<shared_ptr<Shape>> mesh;
 	shared_ptr<Shape> cubeMesh;
 	shared_ptr<Shape> smoothSphereMesh;
-	shared_ptr<Shape> titanicMesh;
+	shared_ptr<Shape> groundMesh;
+	shared_ptr<Shape> goombaMesh;
+
+
 
 	vector<shared_ptr<Shape>> corals;
+
+	shared_ptr<Texture> texture0;
+	shared_ptr<Texture> texture1;
+
 
 	int sign = 1;
 
@@ -339,12 +350,40 @@ public:
 		cubeProg->addAttribute("vertNor");
 		cubeProg->addUniform("skybox");
 
+		texProg = make_shared<Program>();
+		texProg->setVerbose(true);
+		texProg->setShaderNames(resourceDirectory + "/tex_vert.glsl", resourceDirectory + "/tex_frag0.glsl");
+		texProg->init();
+		texProg->addUniform("P");
+		texProg->addUniform("V");
+		texProg->addUniform("M");
+		texProg->addAttribute("vertPos");
+		texProg->addAttribute("vertNor");
+
+		texProg->addAttribute("vertTex");
+		texProg->addUniform("Texture0");
+
 		lightPos.x = -10.0;
 		lightPos.y = 2.0;
 		lightPos.z = 2.0;
 
 		cubemapTexture = createSky(resourceDirectory + "/cracks/", faces);
 	}
+
+	// Code to load in textures
+	void initTex(const std::string& resourceDirectory){
+ 		texture0 = make_shared<Texture>();
+ 		texture0->setFilename(resourceDirectory + "/gamegrass.jpg");
+ 		texture0->init();
+ 		texture0->setUnit(0);
+ 		texture0->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+
+ 		texture1 = make_shared<Texture>();
+ 		texture1->setFilename(resourceDirectory + "/goomba.bmp");
+ 		texture1->init();
+ 		texture1->setUnit(1);
+ 		texture1->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+	} 
 
 	void initGeom(const std::string &resourceDirectory)
 	{
@@ -363,6 +402,19 @@ public:
 			cerr << errStr << endl;
 		}
 
+		rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/cubetex.obj").c_str());
+		if (!rc)
+		{
+			cerr << errStr << endl;
+		}
+		else
+		{
+			groundMesh = make_shared<Shape>();
+			groundMesh->createShape(TOshapes[0]);
+			groundMesh->measure();
+			groundMesh->init();
+		}
+
 		rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/cube.obj").c_str());
 		if (!rc)
 		{
@@ -376,17 +428,17 @@ public:
 			cubeMesh->init();
 		}
 
-		rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/titanic.obj").c_str());
+		rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/goomba.obj").c_str());
 		if (!rc)
 		{
 			cerr << errStr << endl;
 		}
 		else
 		{
-			titanicMesh = make_shared<Shape>();
-			titanicMesh->createShape(TOshapes[0]);
-			titanicMesh->measure();
-			titanicMesh->init();
+			goombaMesh = make_shared<Shape>();
+			goombaMesh->createShape(TOshapes[0]);
+			goombaMesh->measure();
+			goombaMesh->init();
 		}
 	}
 
@@ -569,32 +621,94 @@ public:
 		Model->pushMatrix();
 		Model->loadIdentity();
 
-
 		vector<GameObject> gameObjects = gameManager->getGameObjects();
 		int boardSize = gameManager->getBoardsize();
 
-		setMaterial(4);
-		for (int i = 0; i < gameObjects.size(); i++) {
-			GameObject gameObject = gameObjects[i];
-
-			Model->pushMatrix();
-				Model->translate(gameObject.getPosition());
-				Model->scale(vec3(8, 8, 8));
-				setModel(prog, Model);
-				cubeMesh->draw(prog);
-			Model->popMatrix();
-		}
-
+	
+		prog->unbind();
+	
 		// Draw Ground
-		setMaterial(7);
+		texProg->bind();
+
+
+		glUniformMatrix4fv(texProg->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
+		glUniformMatrix4fv(texProg->getUniform("V"), 1, GL_FALSE, value_ptr(View->topMatrix()));
+		glUniformMatrix4fv(texProg->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
+		texture0->bind(texProg->getUniform("Texture0"));
+
 		Model->pushMatrix();
 			Model->translate(vec3(0, 0, 0));
 			Model->scale(vec3(boardSize, 2, boardSize));
 
-			setModel(prog, Model);
-			cubeMesh->draw(prog);
+			setModel(texProg, Model);
+			groundMesh->draw(texProg);
 		Model->popMatrix();
 
+		texture1->bind(texProg->getUniform("Texture0"));
+
+
+		for (int i = 0; i < gameObjects.size(); i++) {
+			GameObject gameObject = gameObjects[i];
+			vec3 objVelocity = gameObject.getVelocity();
+
+			//cout << gameObject.getVelocity().x << " " << gameObject.getVelocity().y <<  " " << gameObject.getVelocity().z << endl;
+
+			double dotProd = glm::dot(vec3(-1, 0, 0), objVelocity);
+			double mag1 = 1.0;
+			double mag2 = glm::length(objVelocity);
+
+			//cout << "Mag2: " << mag2 << endl;
+
+			double dotTheta = dotProd / (mag1 * mag2);
+			double angleDiff = acos(dotTheta);
+
+			if (objVelocity.z < 0) {
+				angleDiff *= -1;
+			}
+
+			//cout << angleDiff << endl;
+
+			Model->pushMatrix();
+				Model->translate(gameObject.getPosition());
+				Model->rotate(angleDiff + 3.14159, vec3(0, 1, 0));
+				Model->rotate(0.1*sTheta, vec3(1, 0, 0));
+				//Model->scale(vec3(8, 8, 8));
+				setModel(texProg, Model);
+				goombaMesh->draw(texProg);
+			Model->popMatrix();
+		}
+		
+		// Model->pushMatrix();
+
+		// 	GameObject gameObject = gameObjects[0];
+		// 	vec3 objVelocity = vec3(-0.5, 0, 0.5);
+
+		// 	cout << "Velocity: " << gameObject.getVelocity().x << " " << gameObject.getVelocity().y <<  " " << gameObject.getVelocity().z << endl;
+
+		// 	double dotProd = dot(vec3(-1, 0, 0), objVelocity);
+		// 	double mag1 = 1.0;
+		// 	double mag2 = glm::length(objVelocity);
+
+		// 	cout << "dot " << dotProd << endl;
+
+		// 	double dotTheta = dotProd / (mag1 * mag2);
+		// 	double angleDiff = acos(dotTheta);
+
+		// 	if (z < 0) {
+		// 		angleDiff *= -1;
+		// 	}
+
+		// 	cout << "Angle: " << angleDiff << endl; 
+		// 	Model->translate(vec3(0, 20, -40));
+		// 	Model->rotate(angleDiff, vec3(0, 1, 0));
+			
+		// 	setModel(texProg, Model);
+		// 	goombaMesh->draw(texProg);
+		// Model->popMatrix();
+		texProg->unbind();
+
+		prog->bind();
+		setMaterial(4);
 		Model->pushMatrix();
 			Model->translate(vec3(0, 5, -boardSize / 2));
 			Model->scale(vec3(boardSize + 2.5, 20, 2));
@@ -648,8 +762,9 @@ public:
 			Model->popMatrix();
 
 		Model->popMatrix();
+		
 
-		sTheta = sin(glfwGetTime());
+		sTheta = sin(glfwGetTime() * 10);
 		cTheta = cos(glfwGetTime()) / 5;
 		eTheta = std::max(0.0f, (float)sin(glfwGetTime()));
 		hTheta = std::max(0.0f, (float)sin(glfwGetTime()));
@@ -658,7 +773,7 @@ public:
 		Projection->popMatrix();
 		View->popMatrix();
 
-		gameManager->update();
+		//gameManager->update();
 	}
 };
 
@@ -686,15 +801,31 @@ int main(int argc, char *argv[])
 	// may need to initialize or set up different data and state
 	application->init(resourceDir);
 	application->initGeom(resourceDir);
+	application->initTex(resourceDir);
 	// Loop until the user closes the window.
+
+	double curr_tick = 0;
+	double prev_tick = 0;
+	double dt = 0;
 	while (!glfwWindowShouldClose(windowManager->getHandle()))
 	{
+
+		prev_tick = curr_tick;
+		curr_tick = glfwGetTime();
+		dt = curr_tick - prev_tick;
+
+		// .cout << floor(1 / dt) << endl;
+
+		// Update game state
+		application->gameManager->update(dt);
 		// Render scene.
 		application->render();
 		// Swap front and back buffers.
 		glfwSwapBuffers(windowManager->getHandle());
 		// Poll for and process events.
 		glfwPollEvents();
+
+		
 	}
 
 	// Quit program.
