@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <glad/glad.h>
+#include <algorithm>
 
 #include "GLSL.h"
 #include "Program.h"
