@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <glad/glad.h>
+#include <algorithm>
 
 #include "GLSL.h"
 #include "Program.h"
@@ -24,6 +25,8 @@
 // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#define PI 3.14159265358979
 
 using namespace std;
 using namespace glm;
@@ -123,9 +126,6 @@ public:
 	float phi = 0;
 	float theta = -1.5708;
 
-	//float scrollY = 0;
-	//float scrollX = 0;
-
 	glm::vec3 wshift = vec3(0, 0, 0);
 	glm::vec3 sshift = vec3(0, 0, 0);
 	glm::vec3 ashift = vec3(0, 0, 0);
@@ -201,7 +201,6 @@ public:
 		// Strafe Controls
 		if (key == GLFW_KEY_A && action == GLFW_PRESS)
 		{
-
 			player->strafeLeft = true;
 		}
 		if (key == GLFW_KEY_D && action == GLFW_PRESS)
@@ -249,10 +248,6 @@ public:
 		if (key == GLFW_KEY_E && action == GLFW_PRESS)
 		{
 			lightPos.x += 5.0;
-		}
-		if (key == GLFW_KEY_R && action == GLFW_PRESS)
-		{
-			phi += 1;
 		}
 
 		if (key == GLFW_KEY_Z && action == GLFW_PRESS)
@@ -379,6 +374,7 @@ public:
 		lightPos.z = 2.0;
 
 		cubemapTexture = createSky(resourceDirectory + "/cracks/", faces);
+		glfwSetInputMode(windowManager->getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	}
 
 	// Code to load in textures
@@ -451,6 +447,7 @@ public:
 			goombaMesh->measure();
 			goombaMesh->init();
 		}
+
 	}
 
 	void setModel(std::shared_ptr<Program> prog, std::shared_ptr<MatrixStack> M)
@@ -755,6 +752,66 @@ public:
 		View->popMatrix();
 
 		//gameManager->update();
+		updatePlayerOrientation();
+	}
+
+	/*
+	 * A helper function to be called in render. Orients the player (who is the camera)
+	 * to change where it's looking based off of the mouse.
+	 */
+	void updatePlayerOrientation()
+	{
+		/*
+		 * Get the width and height of the window in pixels
+		 */
+		int width, height;
+		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
+
+		/* 
+		 * Get the x and y position of the cursor in screen coordinates 
+		 * relative to the upper-left corner. GLFW_CURSOR_DISABLED should
+		 * be set so that these values are not limited by the screen bounds.
+		 */
+		double mouseXPos, mouseYPos;
+		glfwGetCursorPos(windowManager->getHandle(), &mouseXPos, &mouseYPos);
+
+		/*
+		 * Adjust the "mouse sensitivity". With this division value, moving 
+		 * the mouse a distance of half of the "canvas" results in one "shift".
+		 * How much a "shift" is is defined below.
+		 */
+		double xShift = mouseXPos / (width / 2);
+		double yShift = mouseYPos / (height / 2);
+
+		/*
+		 * Looking all the way up and all the way down is bad: it flips the
+		 * camera controls for pitch. In order to prevent this, don't let the 
+		 * player look all the way up or all the way down. Presently, these 
+		 * numbers are hardcoded as I don't know what defines the upper and 
+		 * lower limits. TODO: remove these magic numbers; use an epsilon 
+		 * value
+		 */
+		if (yShift >= 1.5) {
+			yShift = 1.49999;
+			/* 
+			 * The cursor position must be reset or else you get this undesirable effect
+			 * where looking too far up or down creates a "buffer" such that you need
+			 * to move the mouse just as far in the other direction to change the pitch
+			 * again. TODO: genericize this cursor setting to accept any shift divition
+			 * value.
+			 */
+			glfwSetCursorPos(windowManager->getHandle(), mouseXPos, yShift * height / 2);
+		}
+		else if (yShift <= 0.5) {
+			yShift = 0.49999;
+			glfwSetCursorPos(windowManager->getHandle(), mouseXPos, yShift * height / 2);
+		}
+	
+		/*
+		 * One "shift" for both yaw and pitch is a 180 degree turn
+		 */
+		player->theta = xShift * PI ;
+		player->phi = yShift * PI;
 	}
 };
 
