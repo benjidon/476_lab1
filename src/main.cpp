@@ -386,7 +386,7 @@ public:
  		texture0->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 
  		texture1 = make_shared<Texture>();
- 		texture1->setFilename(resourceDirectory + "/goomba.bmp");
+ 		texture1->setFilename(resourceDirectory + "/goomba_grp.png");
  		texture1->init();
  		texture1->setUnit(1);
  		texture1->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
