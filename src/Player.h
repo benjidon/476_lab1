@@ -9,7 +9,7 @@ class Player
 {
 public:
 	Player();
-	void getUpdate();
+	void getUpdate(bool sprinting, int boardSize);
 
 	float phi;
 	float theta;

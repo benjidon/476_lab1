@@ -27,7 +27,7 @@ Player::Player()
 	viewBob = 0;
 }
 
-void Player::getUpdate()
+void Player::getUpdate(bool sprinting, int boardSize)
 {
 	// Calculate direction angles
 	float x = cos(this->phi) * cos(this->theta);
@@ -42,34 +42,76 @@ void Player::getUpdate()
 		
 	vec3 strafeOff = (strafe * strafeSpeed);
 	vec3 dollyOff = (view * dollySpeed);
-
 	dollyOff.y = 0;
+
+	int boundary = (boardSize / 2) - 3;
+
 
 	if (strafeLeft)
 	{
-		strafeSpeed = 1;
-		ashift += strafeOff;
-		viewBob += .1;
+		vec3 newPos = posShift + strafe;
+		if (abs(newPos.x) < boundary && abs(newPos.z) < boundary) {
+			strafeSpeed = 1;
+			if (sprinting) {
+				strafeSpeed *= 2;
+			}
+			ashift += strafeOff;
+			viewBob += .1;
+		}
 	}
 	else if (strafeRight)
 	{
-		strafeSpeed = -1;
-		dshift += strafeOff;
-		viewBob += .1;
+		vec3 newPos = posShift - strafe;
+		if (abs(newPos.x) < boundary && abs(newPos.z) < boundary) {
+			strafeSpeed = -1;
+			if (sprinting) {
+				strafeSpeed *= 2;
+			}
+			dshift += strafeOff;
+			viewBob += .1;
+		}
 	}
 
 	if (dollyForward)
 	{
-		dollySpeed = 1;
-		wshift += dollyOff;
-		viewBob += .1;
+		vec3 newPos = posShift + view;
+		if (abs(newPos.x) < boundary && abs(newPos.z) < boundary) {
+			dollySpeed = 1;
+			if (sprinting) {
+				dollySpeed *= 2;
+			}
+			wshift += dollyOff;
+			viewBob += .1;
+		}
 	}
 	else if (dollyBackward)
 	{
-		dollySpeed = -1;
-		sshift += dollyOff;
-		viewBob += .1;
+		vec3 newPos = posShift - view;
+		if (abs(newPos.x) < boundary && abs(newPos.z) < boundary) {
+			dollySpeed = -1;
+			if (sprinting) {
+				dollySpeed *= 2;
+			}			
+			sshift += dollyOff;
+			viewBob += .1;
+		}
 	}
+	//cout << wshift.x << " " << wshift.y << " " << wshift.z << endl;
 	posShift = (dshift + sshift + wshift + ashift);
 	posShift.y += this->height;
+	// if (posShift.x >= boundary) {
+	// 	posShift.x = boundary - 3;
+	// }
+	// if (posShift.z >= boundary) {
+	// 	posShift.z = boundary - 5;
+	// }
+	// if (posShift.x <= -boundary) {
+	// 	posShift.x = -(boundary - 5);
+	// }
+	// if (posShift.z <= -boundary) {
+	// 	posShift.z = -(boundary - 5);
+	// }
+
+
+
 }

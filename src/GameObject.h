@@ -13,6 +13,8 @@ public:
 	void setPosition(glm::vec3 newPos);
 	void setVelocity(glm::vec3 newVelocity);
 	void setRadius(double radius);
+	bool dead;
+	float deathScale;
 
 private:
 	glm::vec3 position;

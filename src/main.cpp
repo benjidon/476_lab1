@@ -16,6 +16,8 @@
 #include "GameManager.h"
 #include "Player.h"
 
+
+
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader/tiny_obj_loader.h>
 
@@ -32,8 +34,11 @@ class Application : public EventCallbacks
 public:
 	WindowManager *windowManager = nullptr;
 
+	int startCount = 5;
+	int boardSize = 400;
+
 	// Initialize GameManager Object
-	GameManager *gameManager = new GameManager(10, 600);
+	GameManager *gameManager = new GameManager(startCount, boardSize);
 
 	// Initialize Player Object 
 	Player *player = new Player();
@@ -100,6 +105,7 @@ public:
 	bool dollyBackward = false;
 	float dollySpeed = 20;
 	float strafeSpeed = 20;
+	bool sprinting = false;
 
 	// Different materials for the setMaterial() function
 	unsigned int mat1 = 0;
@@ -257,6 +263,15 @@ public:
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
+
+		if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
+		{
+			sprinting = true;
+		}
+		if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
+		{
+			sprinting = false;
+		}
 	}
 
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
@@ -276,8 +291,7 @@ public:
 		float scrollY = -1 * in_deltaY / 50;
 		float scrollX = in_deltaX / 50;
 
-		//cout << "phi: " << phi << " " << "scrollY " << scrollY << endl;
-		//cout << in_deltaX << endl;
+
 
 		if (scrollY > 0)
 		{
@@ -533,7 +547,7 @@ public:
 		return textureID;
 	}
 
-	void render()
+	void render(float dt)
 	{
 		// Get current frame buffer size.
 		int width, height;
@@ -555,9 +569,12 @@ public:
 		Projection->pushMatrix();
 		Projection->perspective(45.0f, aspect, 0.01f, 10000.0f);
 
-		player->getUpdate();
+		player->getUpdate(sprinting, boardSize);
+		gameManager->update(dt, player->posShift);
 
 		vec3 bob = vec3(0,  sin(player->viewBob * 1.3), 0);
+
+		//cout << player->posShift.x << " " << player->posShift.y << " " << player->posShift.z << endl;
 
 		//glm::mat4 lookAt = glm::lookAt(cameraPos, direction, up);
 		View->lookAt(player->posShift + bob, player->direction + player->posShift + bob, up);
@@ -619,6 +636,7 @@ public:
 			double dotProd = glm::dot(vec3(-1, 0, 0), objVelocity);
 			double mag1 = 1.0;
 			double mag2 = glm::length(objVelocity);
+			float deathScale = gameObject.deathScale;
 
 			//cout << "Mag2: " << mag2 << endl;
 
@@ -635,7 +653,7 @@ public:
 				Model->translate(gameObject.getPosition());
 				Model->rotate(angleDiff + 3.14159, vec3(0, 1, 0));
 				Model->rotate(0.1*sTheta, vec3(1, 0, 0));
-				//Model->scale(vec3(8, 8, 8));
+				Model->scale(vec3(deathScale, deathScale, deathScale));
 				setModel(texProg, Model);
 				goombaMesh->draw(texProg);
 			Model->popMatrix();
@@ -777,12 +795,8 @@ int main(int argc, char *argv[])
 		curr_tick = glfwGetTime();
 		dt = curr_tick - prev_tick;
 
-		// .cout << floor(1 / dt) << endl;
-
-		// Update game state
-		application->gameManager->update(dt);
 		// Render scene.
-		application->render();
+		application->render(dt);
 		// Swap front and back buffers.
 		glfwSwapBuffers(windowManager->getHandle());
 		// Poll for and process events.

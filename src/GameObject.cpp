@@ -2,6 +2,8 @@
 
 GameObject::GameObject()
 {
+	dead = false;
+	deathScale = 1.0;
 }
 
 
