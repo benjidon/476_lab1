@@ -156,7 +156,7 @@ void GameManager::updateGameObjects(double dt, vec3 playerPos)
 
 vec3 GameManager::getEmptySpace(int sign, int radius) {
 	
-	vec3 position = vec3(sign * rand() % boardSize / 2.5, 13, sign * rand() % boardSize / 2.5);
+	vec3 position = vec3(sign * rand() % boardSize / 2.5, 17, sign * rand() % boardSize / 2.5);
 
 	if (gameObjects.size() < 2) {
 		return position;

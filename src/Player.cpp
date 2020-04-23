@@ -44,7 +44,7 @@ void Player::getUpdate(bool sprinting, int boardSize)
 	vec3 dollyOff = (view * dollySpeed);
 	dollyOff.y = 0;
 
-	int boundary = (boardSize / 2) - 3;
+	int boundary = (boardSize / 2);
 
 
 	if (strafeLeft)
@@ -96,21 +96,21 @@ void Player::getUpdate(bool sprinting, int boardSize)
 			viewBob += .1;
 		}
 	}
-	//cout << wshift.x << " " << wshift.y << " " << wshift.z << endl;
+	//cout << posShift.x << " " << posShift.y << " " << posShift.z << endl;
 	posShift = (dshift + sshift + wshift + ashift);
 	posShift.y += this->height;
-	// if (posShift.x >= boundary) {
-	// 	posShift.x = boundary - 3;
-	// }
-	// if (posShift.z >= boundary) {
-	// 	posShift.z = boundary - 5;
-	// }
-	// if (posShift.x <= -boundary) {
-	// 	posShift.x = -(boundary - 5);
-	// }
-	// if (posShift.z <= -boundary) {
-	// 	posShift.z = -(boundary - 5);
-	// }
+	if (posShift.x >= boundary) {
+		posShift.x = boundary - 3;
+	}
+	if (posShift.z >= boundary) {
+		posShift.z = boundary - 5;
+	}
+	if (posShift.x <= -200) {
+		posShift.x = -195;
+	}
+	if (posShift.z <= -boundary) {
+		posShift.z = -195;
+	}
 
 
 

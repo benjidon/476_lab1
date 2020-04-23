@@ -656,33 +656,6 @@ public:
 			Model->popMatrix();
 		}
 		
-		// Model->pushMatrix();
-
-		// 	GameObject gameObject = gameObjects[0];
-		// 	vec3 objVelocity = vec3(-0.5, 0, 0.5);
-
-		// 	cout << "Velocity: " << gameObject.getVelocity().x << " " << gameObject.getVelocity().y <<  " " << gameObject.getVelocity().z << endl;
-
-		// 	double dotProd = dot(vec3(-1, 0, 0), objVelocity);
-		// 	double mag1 = 1.0;
-		// 	double mag2 = glm::length(objVelocity);
-
-		// 	cout << "dot " << dotProd << endl;
-
-		// 	double dotTheta = dotProd / (mag1 * mag2);
-		// 	double angleDiff = acos(dotTheta);
-
-		// 	if (z < 0) {
-		// 		angleDiff *= -1;
-		// 	}
-
-		// 	cout << "Angle: " << angleDiff << endl; 
-		// 	Model->translate(vec3(0, 20, -40));
-		// 	Model->rotate(angleDiff, vec3(0, 1, 0));
-			
-		// 	setModel(texProg, Model);
-		// 	goombaMesh->draw(texProg);
-		// Model->popMatrix();
 		texProg->unbind();
 
 		prog->bind();
